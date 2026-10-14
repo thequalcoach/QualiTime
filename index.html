@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans,"Anthropic Sans",sans-serif);font-size:15px;color:var(--color-text-primary,#1a1a1a);background:transparent;padding:1rem}
+h2{font-size:18px;font-weight:500;margin-bottom:1rem}
+h3{font-size:15px;font-weight:500;margin-bottom:.5rem}
+label{font-size:13px;color:var(--color-text-secondary,#666);display:block;margin-bottom:4px}
+input,select{width:100%;padding:7px 10px;border:0.5px solid var(--color-border-secondary,#ccc);border-radius:8px;font-size:14px;background:var(--color-background-primary,#fff);color:var(--color-text-primary,#1a1a1a);margin-bottom:12px}
+input:focus,select:focus{outline:none;border-color:var(--color-border-primary,#888)}
+button{padding:8px 18px;border:0.5px solid var(--color-border-secondary,#ccc);border-radius:8px;background:transparent;color:var(--color-text-primary,#1a1a1a);font-size:13px;cursor:pointer;transition:background .15s}
+button:hover{background:var(--color-background-secondary,#f5f5f5)}
+button.primary{background:var(--color-text-primary,#1a1a1a);color:var(--color-background-primary,#fff);border-color:transparent}
+button.primary:hover{opacity:.85}
+button.danger{border-color:var(--color-border-danger,#fca5a5);color:var(--color-text-danger,#b91c1c)}
+button.danger:hover{background:var(--color-background-danger,#fef2f2)}
+.card{background:var(--color-background-primary,#fff);border:0.5px solid var(--color-border-tertiary,#e5e5e5);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tag{font-size:11px;padding:2px 8px;border-radius:6px;background:var(--color-background-secondary,#f5f5f5);color:var(--color-text-secondary,#666);border:0.5px solid var(--color-border-tertiary,#e5e5e5)}
+.tag.kii{background:#E6F1FB;color:#185FA5;border-color:#85B7EB}
+.tag.fgd{background:#E1F5EE;color:#0F6E56;border-color:#5DCAA5}
+.tag.both{background:#EEEDFE;color:#534AB7;border-color:#AFA9EC}
+.proj-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary,#e5e5e5);gap:8px}
+.proj-item:last-child{border-bottom:none}
+.proj-name{font-size:14px;font-weight:500;cursor:pointer}
+.proj-name:hover{text-decoration:underline}
+.proj-meta{font-size:12px;color:var(--color-text-secondary,#666);margin-top:2px}
+.metric{background:var(--color-background-secondary,#f5f5f5);border-radius:8px;padding:.75rem 1rem;text-align:center}
+.metric-val{font-size:20px;font-weight:500}
+.metric-lbl{font-size:12px;color:var(--color-text-secondary,#666);margin-top:2px}
+.gantt-wrap{overflow-x:auto;margin-top:.5rem}
+.phase-row{display:flex;align-items:center;margin-bottom:6px;gap:8px;min-width:560px}
+.phase-label{font-size:11px;color:var(--color-text-secondary,#666);width:170px;flex-shrink:0;text-align:right;padding-right:4px}
+.phase-bar-wrap{flex:1;background:var(--color-background-secondary,#f0f0f0);border-radius:4px;height:22px;position:relative}
+.phase-bar{height:100%;border-radius:4px;position:absolute;display:flex;align-items:center;padding-left:6px;overflow:hidden}
+.phase-day{font-size:11px;color:var(--color-text-secondary,#666);white-space:nowrap;width:80px;flex-shrink:0}
+.axis-row{display:flex;align-items:center;gap:8px;min-width:560px;margin-bottom:4px}
+.axis-lbl{width:170px;flex-shrink:0}
+.axis-track{flex:1;position:relative;height:16px}
+.axis-tick{position:absolute;font-size:10px;color:var(--color-text-tertiary,#999);transform:translateX(-50%)}
+.tabs{display:flex;gap:4px;margin-bottom:1rem}
+.tab{padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer;border:0.5px solid transparent;color:var(--color-text-secondary,#666)}
+.tab.active{background:var(--color-background-primary,#fff);border-color:var(--color-border-secondary,#ccc);color:var(--color-text-primary,#1a1a1a);font-weight:500}
+.empty{font-size:13px;color:var(--color-text-tertiary,#aaa);padding:1.5rem 0;text-align:center}
+.status-bar{font-size:12px;color:var(--color-text-secondary,#666);min-height:20px;margin-bottom:4px}
+@media print {
+  body { padding: 0; }
+  .tabs, #status, .no-print { display: none !important; }
+  .card { border: 0.5px solid #ccc; break-inside: avoid; }
+  #view-projects, #view-new { display: none !important; }
+  #view-detail { display: block !important; }
+}
+</style>
+</head>
+<body>
+<h2 style="margin-bottom:.25rem">QualiTime</h2>
+<p style="font-size:13px;color:var(--color-text-secondary,#666);margin-bottom:1rem">Qualitative analysis timeline planner</p>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<div class="tabs">
+  <div class="tab active" id="tab-projects" onclick="showTab('projects')">Projects</div>
+  <div class="tab" id="tab-new" onclick="showTab('new')">New project</div>
+  <div class="tab" id="tab-detail" style="display:none" onclick="showTab('detail')">Timeline</div>
+</div>
+
+<div id="status" class="status-bar"></div>
+
+<!-- PROJECTS LIST -->
+<div id="view-projects">
+  <div class="card"><div id="proj-list"><div class="empty">No projects yet. Create one to get started.</div></div></div>
+</div>
+
+<!-- NEW PROJECT FORM -->
+<div id="view-new" style="display:none">
+  <div class="card">
+    <h3>Project details</h3>
+    <div style="margin-top:.75rem">
+      <label>Project name</label>
+      <input id="f-name" type="text" placeholder="e.g. MNCH qualitative study">
+      <label>Start date</label>
+      <input id="f-start" type="date">
+      <label>Data source</label>
+      <select id="f-source" onchange="onSourceChange()">
+        <option value="KII">KII only</option>
+        <option value="FGD">FGD only</option>
+        <option value="Both">Both (KII + FGD)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- KII card -->
+  <div class="card" id="kii-card">
+    <h3>KII parameters</h3>
+    <div style="margin-top:.75rem" class="grid2">
+      <div><label>Number of interviews</label><input id="k-n" type="number" min="1" value="20"></div>
+      <div><label>Avg. transcript pages</label><input id="k-pages" type="number" min="1" value="12"></div>
+    </div>
+    <label>Coding complexity</label>
+    <select id="k-complex">
+      <option value="low">Low (1–2 themes, narrow scope)</option>
+      <option value="medium" selected>Medium (3–5 themes, moderate scope)</option>
+      <option value="high">High (6+ themes, broad or sensitive)</option>
+    </select>
+    <label>Consensus requirement</label>
+    <select id="k-consensus">
+      <option value="light">Light (informal review)</option>
+      <option value="moderate" selected>Moderate (structured meetings)</option>
+      <option value="intensive">Intensive (full team, iterative)</option>
+    </select>
+    <label>Number of coders</label>
+    <input id="k-coders" type="number" min="1" value="2">
+    <label>IRR required?</label>
+    <select id="k-irr-req" onchange="toggleIRR('k')">
+      <option value="yes">Yes — rigorous qualitative</option>
+      <option value="no">No — loose evaluation / feedback</option>
+    </select>
+    <div id="k-irr-block">
+      <label>IRR target (κ)</label>
+      <select id="k-irr">
+        <option value="0.60">≥0.60 (acceptable)</option>
+        <option value="0.70">≥0.70 (good)</option>
+        <option value="0.80" selected>≥0.80 (strong)</option>
+      </select>
+    </div>
+    <label>Member checking planned?</label>
+    <select id="k-member">
+      <option value="no">No</option>
+      <option value="yes" selected>Yes</option>
+    </select>
+    <label>Triangulation planned?</label>
+    <select id="k-tri">
+      <option value="no">No</option>
+      <option value="yes" selected>Yes</option>
+    </select>
+  </div>
+
+  <!-- Report Writing card -->
+  <div class="card" id="report-card">
+    <h3>Report writing</h3>
+    <div style="margin-top:.75rem">
+      <label>Include report writing phase?</label>
+      <select id="r-include" onchange="toggleReport()">
+        <option value="no">No</option>
+        <option value="yes">Yes</option>
+      </select>
+      <div id="r-block" style="display:none">
+        <label>Initial draft length</label>
+        <select id="r-draft">
+          <option value="10">~10 days (shorter/focused report)</option>
+          <option value="12" selected>~12 days (standard)</option>
+          <option value="14">~14 days (comprehensive)</option>
+        </select>
+        <label>Number of revision rounds</label>
+        <select id="r-revisions">
+          <option value="1">1 round (~10 days)</option>
+          <option value="2" selected>2 rounds (~17 days)</option>
+          <option value="3">3 rounds (~24 days)</option>
+          <option value="4">4+ rounds (~30 days)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- FGD card -->
+  <div class="card" id="fgd-card" style="display:none">
+    <h3>FGD parameters</h3>
+    <div style="margin-top:.75rem" class="grid2">
+      <div><label>Number of FGDs</label><input id="g-n" type="number" min="1" value="8"></div>
+      <div><label>Avg. transcript pages</label><input id="g-pages" type="number" min="1" value="18"></div>
+    </div>
+    <label>Coding complexity</label>
+    <select id="g-complex">
+      <option value="low">Low</option>
+      <option value="medium" selected>Medium</option>
+      <option value="high">High</option>
+    </select>
+    <label>Consensus requirement</label>
+    <select id="g-consensus">
+      <option value="light">Light</option>
+      <option value="moderate" selected>Moderate</option>
+      <option value="intensive">Intensive</option>
+    </select>
+    <label>Number of coders</label>
+    <input id="g-coders" type="number" min="1" value="2">
+    <label>IRR required?</label>
+    <select id="g-irr-req" onchange="toggleIRR('g')">
+      <option value="yes">Yes — rigorous qualitative</option>
+      <option value="no">No — loose evaluation / feedback</option>
+    </select>
+    <div id="g-irr-block">
+      <label>IRR target (κ)</label>
+      <select id="g-irr">
+        <option value="0.60">≥0.60</option>
+        <option value="0.70">≥0.70</option>
+        <option value="0.80" selected>≥0.80</option>
+      </select>
+    </div>
+    <label>Member checking planned?</label>
+    <select id="g-member">
+      <option value="no">No</option>
+      <option value="yes" selected>Yes</option>
+    </select>
+    <label>Triangulation planned?</label>
+    <select id="g-tri">
+      <option value="no">No</option>
+      <option value="yes" selected>Yes</option>
+    </select>
+  </div>
+
+  <div class="row" style="margin-top:.5rem">
+    <button class="primary" onclick="saveProject()">Calculate &amp; save</button>
+    <button onclick="showTab('projects')">Cancel</button>
+  </div>
+</div>
+
+<!-- DETAIL / GANTT -->
+<div id="view-detail" style="display:none">
+  <div id="detail-content"></div>
+</div>
+
+<script>
+var projects = [];
+
+// ── Multipliers (tuned for 1–3 month turnaround) ──
+var complexMult   = {low:.12, medium:.20, high:.32};
+var consensusMult = {light:.15, moderate:.28, intensive:.45};
+var irrMult       = {'0.60':.5,'0.70':.75,'0.80':1.0};
+var COLORS = ['#378ADD','#1D9E75','#7F77DD','#D85A30','#BA7517','#639922','#D4537E','#185FA5'];
+
+// ── UI helpers ──
+function showTab(tab) {
+  ['projects','new','detail'].forEach(function(t) {
+    document.getElementById('view-'+t).style.display = t===tab ? '' : 'none';
+    var tabEl = document.getElementById('tab-'+t);
+    if(tabEl) tabEl.classList.toggle('active', t===tab);
+  });
+  document.getElementById('tab-detail').style.display = tab==='detail' ? '' : 'none';
+}
+
+function toggleIRR(prefix) {
+  var req = document.getElementById(prefix+'-irr-req').value;
+  document.getElementById(prefix+'-irr-block').style.display = req==='yes' ? '' : 'none';
+}
+
+function toggleReport() {
+  var inc = document.getElementById('r-include').value;
+  document.getElementById('r-block').style.display = inc==='yes' ? '' : 'none';
+}
+
+function onSourceChange() {
+  var src = document.getElementById('f-source').value;
+  document.getElementById('kii-card').style.display = src==='FGD'  ? 'none' : '';
+  document.getElementById('fgd-card').style.display = src==='KII'  ? 'none' : '';
+}
+
+function setStatus(msg, dur) {
+  document.getElementById('status').textContent = msg;
+  if(dur !== 0) setTimeout(function(){ document.getElementById('status').textContent=''; }, dur||2000);
+}
+
+// ── Date helpers ──
+function workdaysToDate(startStr, workdays) {
+  var d = new Date(startStr);
+  var added = 0;
+  while(added < workdays) {
+    d.setDate(d.getDate()+1);
+    var dow = d.getDay();
+    if(dow!==0 && dow!==6) added++;
+  }
+  return d;
+}
+
+function fmtDate(d) {
+  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+}
+
+// ── Phase calculation ──
+function calcPhases(src, p) {
+  var label = src==='KII' ? 'KII' : 'FGD';
+  var cm  = complexMult[p.complex];
+  var csm = consensusMult[p.consensus];
+  var im  = irrMult[p.irr] || 1;
+  var totalPages = p.n * p.pages;
+
+  var ic   = Math.ceil(totalPages * cm / p.coders);
+  var cb   = Math.ceil(2 + totalPages * cm * 0.06);
+  var cons = Math.max(2, Math.ceil(p.n * csm * 0.12));
+  var irr  = p.irrReq==='yes' ? Math.ceil(Math.ceil(totalPages*.08)*im/p.coders+1) : 0;
+  var mc   = p.member==='yes' ? Math.max(3, Math.ceil(p.n*.15)) : 0;
+  var tri  = p.tri==='yes'    ? Math.max(3, Math.ceil(totalPages*.02+2)) : 0;
+
+  var phases = [
+    {name:'Initial coding ('+label+')', days:ic},
+    {name:'Codebook development ('+label+')', days:cb},
+    {name:'Consensus meetings ('+label+')', days:cons},
+  ];
+  if(irr)  phases.push({name:'IRR ('+label+')', days:irr});
+  if(mc)   phases.push({name:'Member checking ('+label+')', days:mc});
+  if(tri)  phases.push({name:'Triangulation ('+label+')', days:tri});
+  phases.push({name:'Final review ('+label+')', days:2});
+  return phases;
+}
+
+function computeProject(proj) {
+  var raw = [];
+  if(proj.source==='KII')       raw = calcPhases('KII', proj.kii);
+  else if(proj.source==='FGD')  raw = calcPhases('FGD', proj.fgd);
+  else                           raw = calcPhases('KII', proj.kii).concat(calcPhases('FGD', proj.fgd));
+
+  // Append report writing phases if selected
+  if(proj.report && proj.report.include==='yes') {
+    var revDays = [0,10,17,24,30][Math.min(proj.report.revisions,4)];
+    raw.push({name:'Report — initial draft', days:proj.report.draft});
+    if(revDays) raw.push({name:'Report — revisions ('+proj.report.revisions+' round'+(proj.report.revisions>1?'s':'')+')', days:revDays});
+  }
+
+  var day = 0;
+  return raw.map(function(p) {
+    var s=day; day+=p.days;
+    return {name:p.name, days:p.days, start:s, end:day};
+  });
+}
+
+// ── Storage ──
+function loadProjects() {
+  window.storage.get('projects').then(function(r) {
+    if(r) projects = JSON.parse(r.value);
+    renderProjList();
+  }).catch(function(){ projects=[]; renderProjList(); });
+}
+
+function persistProjects() {
+  window.storage.set('projects', JSON.stringify(projects))
+    .then(function(){ setStatus('Saved.'); })
+    .catch(function(){ setStatus('Save failed.'); });
+}
+
+// ── Project list ──
+function renderProjList() {
+  var el = document.getElementById('proj-list');
+  if(!projects.length) {
+    el.innerHTML='<div class="empty">No projects yet. Create one to get started.</div>';
+    return;
+  }
+  el.innerHTML = projects.map(function(p) {
+    var phases = computeProject(p);
+    var total  = phases[phases.length-1].end;
+    var endDate = workdaysToDate(p.startDate, total);
+    return '<div class="proj-item">'
+      +'<div onclick="openProjectById(\''+p.id+'\')" style="cursor:pointer;flex:1">'
+      +'<div class="proj-name">'+p.name+'</div>'
+      +'<div class="proj-meta">'+fmtDate(new Date(p.startDate))+' → '+fmtDate(endDate)+' · '+total+' working days</div>'
+      +'</div>'
+      +'<div class="row" style="gap:6px">'
+      +'<span class="tag '+p.source.toLowerCase()+'">'+p.source+'</span>'
+      +'<button class="danger" style="font-size:12px;padding:4px 10px" onclick="deleteProject(\''+p.id+'\')">Delete</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function deleteProject(id) {
+  projects = projects.filter(function(p){ return p.id!==id; });
+  persistProjects();
+  renderProjList();
+}
+
+function openProjectById(id) {
+  var proj = projects.find(function(p){ return p.id===id; });
+  if(proj) openProject(proj);
+}
+
+// ── Save new project ──
+function saveProject() {
+  var name     = document.getElementById('f-name').value.trim();
+  var startVal = document.getElementById('f-start').value;
+  var source   = document.getElementById('f-source').value;
+  if(!name)     { setStatus('Please enter a project name.', 3000); return; }
+  if(!startVal) { setStatus('Please select a start date.', 3000); return; }
+
+  function kiiParams() {
+    return {
+      n:       +document.getElementById('k-n').value||20,
+      pages:   +document.getElementById('k-pages').value||12,
+      complex:  document.getElementById('k-complex').value,
+      consensus:document.getElementById('k-consensus').value,
+      coders:  +document.getElementById('k-coders').value||2,
+      irrReq:   document.getElementById('k-irr-req').value,
+      irr:      document.getElementById('k-irr').value,
+      member:   document.getElementById('k-member').value,
+      tri:      document.getElementById('k-tri').value,
+    };
+  }
+  function fgdParams() {
+    return {
+      n:       +document.getElementById('g-n').value||8,
+      pages:   +document.getElementById('g-pages').value||18,
+      complex:  document.getElementById('g-complex').value,
+      consensus:document.getElementById('g-consensus').value,
+      coders:  +document.getElementById('g-coders').value||2,
+      irrReq:   document.getElementById('g-irr-req').value,
+      irr:      document.getElementById('g-irr').value,
+      member:   document.getElementById('g-member').value,
+      tri:      document.getElementById('g-tri').value,
+    };
+  }
+
+  var proj = {
+    id:        Date.now().toString(),
+    name:      name,
+    startDate: startVal,
+    source:    source,
+    kii:       source!=='FGD' ? kiiParams() : null,
+    fgd:       source!=='KII' ? fgdParams() : null,
+    report: {
+      include:   document.getElementById('r-include').value,
+      draft:    +document.getElementById('r-draft').value,
+      revisions:+document.getElementById('r-revisions').value,
+    },
+  };
+  projects.unshift(proj);
+  persistProjects();
+  renderProjList();
+  openProject(proj);
+}
+
+// ── Detail / Gantt ──
+function openProject(proj) {
+  renderDetail(proj);
+  document.getElementById('tab-detail').style.display = '';
+  showTab('detail');
+}
+
+function renderDetail(proj) {
+  var phases   = computeProject(proj);
+  var total    = phases[phases.length-1].end;
+  var startDate = new Date(proj.startDate);
+  var endDate   = workdaysToDate(proj.startDate, total);
+
+  var totalPages = 0;
+  if(proj.kii) totalPages += proj.kii.n * proj.kii.pages;
+  if(proj.fgd) totalPages += proj.fgd.n * proj.fgd.pages;
+
+  // Gantt bars
+  var barsHTML = phases.map(function(p, i) {
+    var left  = Math.round((p.start/total)*100);
+    var width = Math.max(2, Math.round((p.days/total)*100));
+    var color = COLORS[i % COLORS.length];
+    var sd = workdaysToDate(proj.startDate, p.start);
+    return '<div class="phase-row">'
+      +'<div class="phase-label">'+p.name+'</div>'
+      +'<div class="phase-bar-wrap">'
+      +'<div class="phase-bar" style="left:'+left+'%;width:'+width+'%;background:'+color+'22;border-left:3px solid '+color+'">'
+      +'<span style="color:'+color+';font-size:10px;font-weight:500">'+p.days+'d</span>'
+      +'</div></div>'
+      +'<div class="phase-day">'+fmtDate(sd)+'</div>'
+      +'</div>';
+  }).join('');
+
+  // Axis ticks
+  var ticks = [0,25,50,75,100].map(function(pct) {
+    var d = workdaysToDate(proj.startDate, Math.round((pct/100)*total));
+    return '<span class="axis-tick" style="left:'+pct+'%">'+fmtDate(d)+'</span>';
+  }).join('');
+
+  // Phase table rows
+  var tableRows = phases.map(function(p, i) {
+    var sd = workdaysToDate(proj.startDate, p.start);
+    var ed = workdaysToDate(proj.startDate, p.end);
+    return '<tr style="border-bottom:0.5px solid var(--color-border-tertiary,#eee)">'
+      +'<td style="padding:8px 0"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+COLORS[i%COLORS.length]+';margin-right:6px;vertical-align:middle"></span>'+p.name+'</td>'
+      +'<td style="text-align:right;padding:8px 0;font-weight:500">'+p.days+'</td>'
+      +'<td style="text-align:right;padding:8px 0;color:var(--color-text-secondary,#666)">'+fmtDate(sd)+'</td>'
+      +'<td style="text-align:right;padding:8px 0;color:var(--color-text-secondary,#666)">'+fmtDate(ed)+'</td>'
+      +'</tr>';
+  }).join('');
+
+  document.getElementById('detail-content').innerHTML =
+    '<div class="card">'
+    +'<div class="row" style="justify-content:space-between;align-items:flex-start">'
+    +'<div><h3>'+proj.name+'</h3><div style="margin-top:4px"><span class="tag '+proj.source.toLowerCase()+'">'+proj.source+'</span></div></div>'
+    +'<div class="row no-print" style="gap:6px">'
+    +'<button onclick="showTab(\'projects\')" style="font-size:12px;padding:4px 10px">← All projects</button>'
+    +'<button onclick="exportPNG()" style="font-size:12px;padding:4px 10px">⬇ PNG</button>'
+    +'<button onclick="exportPDF()" style="font-size:12px;padding:4px 10px">⬇ PDF</button>'
+    +'</div>'
+    +'</div>'
+    +'<div class="grid3" style="margin-top:1rem">'
+    +'<div class="metric"><div class="metric-val">'+total+'</div><div class="metric-lbl">Working days</div></div>'
+    +'<div class="metric"><div class="metric-val">'+fmtDate(startDate)+'</div><div class="metric-lbl">Start</div></div>'
+    +'<div class="metric"><div class="metric-val">'+fmtDate(endDate)+'</div><div class="metric-lbl">Est. completion</div></div>'
+    +'</div>'
+    +(totalPages ? '<div class="grid2" style="margin-top:.75rem">'
+    +'<div class="metric"><div class="metric-val">'+totalPages+'</div><div class="metric-lbl">Total transcript pages</div></div>'
+    +'<div class="metric"><div class="metric-val">'+phases.length+'</div><div class="metric-lbl">Analysis phases</div></div>'
+    +'</div>' : '')
+    +'</div>'
+
+    +'<div class="card"><h3>Gantt chart</h3>'
+    +'<div class="gantt-wrap" style="margin-top:.75rem">'
+    +'<div class="axis-row"><div class="axis-lbl"></div><div class="axis-track">'+ticks+'</div><div style="width:80px"></div></div>'
+    +barsHTML
+    +'</div></div>'
+
+    +'<div class="card"><h3>Phase breakdown</h3>'
+    +'<table style="width:100%;font-size:13px;border-collapse:collapse;margin-top:.75rem">'
+    +'<thead><tr style="border-bottom:0.5px solid var(--color-border-secondary,#ccc)">'
+    +'<th style="text-align:left;padding:6px 0;font-weight:500;color:var(--color-text-secondary,#666)">Phase</th>'
+    +'<th style="text-align:right;padding:6px 0;font-weight:500;color:var(--color-text-secondary,#666)">Days</th>'
+    +'<th style="text-align:right;padding:6px 0;font-weight:500;color:var(--color-text-secondary,#666)">Start</th>'
+    +'<th style="text-align:right;padding:6px 0;font-weight:500;color:var(--color-text-secondary,#666)">End</th>'
+    +'</tr></thead>'
+    +'<tbody>'+tableRows+'</tbody>'
+    +'</table></div>';
+}
+
+// ── Export ──
+function closeOverlay() {
+  var ov = document.getElementById('export-overlay');
+  if(ov) ov.remove();
+}
+
+function showOverlay(contentHTML) {
+  closeOverlay();
+  var ov = document.createElement('div');
+  ov.id = 'export-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem';
+  ov.innerHTML = '<div style="background:#fff;border-radius:12px;max-width:540px;width:100%;max-height:90vh;overflow:auto;padding:1.5rem;position:relative">'
+    +'<button onclick="closeOverlay()" style="position:absolute;top:12px;right:12px;font-size:18px;line-height:1;padding:2px 8px;border-radius:6px">×</button>'
+    + contentHTML
+    +'</div>';
+  document.body.appendChild(ov);
+}
+
+function exportPNG() {
+  var el = document.getElementById('detail-content');
+  if(!el) return;
+  setStatus('Generating PNG…', 0);
+  html2canvas(el, {backgroundColor:'#ffffff', scale:2, useCORS:true}).then(function(canvas) {
+    setStatus('');
+    showOverlay(
+      '<h3 style="margin-bottom:.75rem">Save as PNG</h3>'
+      +'<p style="font-size:13px;color:#555;margin-bottom:1rem">Right-click the image below and choose <strong>Save image as…</strong></p>'
+      +'<img src="'+canvas.toDataURL('image/png')+'" style="width:100%;border:1px solid #eee;border-radius:8px">'
+    );
+  }).catch(function(e) {
+    setStatus('PNG export failed: '+e.message, 4000);
+  });
+}
+
+function exportPDF() {
+  var el = document.getElementById('detail-content');
+  if(!el) return;
+  showOverlay(
+    '<h3 style="margin-bottom:.75rem">Save as PDF</h3>'
+    +'<p style="font-size:13px;color:#555;margin-bottom:1rem">Press <strong>Ctrl+P</strong> (Windows) or <strong>Cmd+P</strong> (Mac), then set destination to <strong>Save as PDF</strong>. The buttons and overlay will not appear in print.</p>'
+    +'<div id="print-area" style="border:1px solid #eee;border-radius:8px;padding:1rem;font-family:sans-serif;font-size:13px">'
+    + el.innerHTML
+    +'</div>'
+  );
+}
+
+// ── Init ──
+loadProjects();
+</script>
+</body>
+</html>
