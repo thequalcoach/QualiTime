@@ -1,0 +1,1173 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!DOCTYPE html>
+<title>QualiTime</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+/* ─── Design tokens ───────────────────────────────────────────────
+   Layout: single-column app shell; sidebar nav + main content pane
+   Color:  deep plum/lavender brand palette
+   Type:   Cormorant Garamond display · DM Sans body
+──────────────────────────────────────────────────────────────────── */
+:root {
+  /* Brand palette — light mode */
+  --plum:        #2D1B3D;
+  --purple:      #7B5EA7;
+  --lavender:    #B89FCE;
+  --blush:       #E8D8F0;
+  --offwhite:    #FAF7FC;
+
+  /* Semantic surfaces */
+  --bg:          var(--offwhite);
+  --bg-card:     #FFFFFF;
+  --bg-input:    #FFFFFF;
+  --bg-nav:      var(--plum);
+  --bg-active:   rgba(184,159,206,0.18);
+  --bg-muted:    #F2EBF8;
+  --bg-metric:   #F4EEF9;
+
+  /* Text */
+  --text-primary:   var(--plum);
+  --text-secondary: #5C4670;
+  --text-muted:     #9680AD;
+  --text-on-dark:   var(--offwhite);
+  --text-on-dark-2: var(--lavender);
+
+  /* Borders */
+  --border:      #DDD0EA;
+  --border-focus:#7B5EA7;
+
+  /* Accent / interactive */
+  --accent:      var(--purple);
+  --accent-hover:#6A4F93;
+  --accent-light:var(--blush);
+
+  /* Phase bar colors */
+  --phase-1: #7B5EA7;
+  --phase-2: #A07CC0;
+  --phase-3: #C49DD4;
+  --phase-4: #5B8FA8;
+  --phase-5: #7EAFC4;
+  --phase-6: #9BBFCF;
+  --phase-7: #B89FCE;
+  --phase-8: #D4B8E0;
+
+  /* Typography */
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body:    'DM Sans', system-ui, sans-serif;
+
+  /* Radii / shadow */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --shadow-card: 0 1px 3px rgba(45,27,61,0.07), 0 4px 12px rgba(45,27,61,0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg:          #1A0F24;
+    --bg-card:     #251638;
+    --bg-input:    #2E1D45;
+    --bg-nav:      #160C22;
+    --bg-active:   rgba(184,159,206,0.12);
+    --bg-muted:    #2E1D45;
+    --bg-metric:   #2E1D45;
+    --text-primary:   #F0E8F8;
+    --text-secondary: #C4A8DC;
+    --text-muted:     #8A6FAA;
+    --text-on-dark:   #F0E8F8;
+    --text-on-dark-2: #C4A8DC;
+    --border:      #3D2558;
+    --accent:      #9A7DC0;
+    --accent-hover:#B09AD0;
+    --accent-light:#2E1D45;
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg:          #1A0F24;
+  --bg-card:     #251638;
+  --bg-input:    #2E1D45;
+  --bg-nav:      #160C22;
+  --bg-active:   rgba(184,159,206,0.12);
+  --bg-muted:    #2E1D45;
+  --bg-metric:   #2E1D45;
+  --text-primary:   #F0E8F8;
+  --text-secondary: #C4A8DC;
+  --text-muted:     #8A6FAA;
+  --text-on-dark:   #F0E8F8;
+  --text-on-dark-2: #C4A8DC;
+  --border:      #3D2558;
+  --accent:      #9A7DC0;
+  --accent-hover:#B09AD0;
+  --accent-light:#2E1D45;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* ─── Reset & base ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-primary);
+  background: var(--bg);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-left: max(0px, env(safe-area-inset-left, 0px));
+  padding-right: max(0px, env(safe-area-inset-right, 0px));
+}
+
+/* ─── Shell layout ──────────────────────────────────────────────── */
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ─── Sidebar nav ───────────────────────────────────────────────── */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--bg-nav);
+  display: flex;
+  flex-direction: column;
+  padding: 28px 0 24px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidebar-brand {
+  padding: 0 24px 28px;
+  border-bottom: 1px solid rgba(184,159,206,0.15);
+}
+.sidebar-brand-name {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text-on-dark);
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+.sidebar-brand-tagline {
+  font-size: 11px;
+  color: var(--text-on-dark-2);
+  margin-top: 4px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sidebar-nav {
+  padding: 20px 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  color: var(--text-on-dark-2);
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+.nav-item:hover { background: rgba(184,159,206,0.1); color: var(--text-on-dark); }
+.nav-item.active { background: rgba(184,159,206,0.18); color: var(--text-on-dark); font-weight: 500; }
+.nav-item.active .nav-dot { background: var(--lavender); }
+.nav-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(184,159,206,0.35); flex-shrink: 0; transition: background 0.15s; }
+
+.sidebar-footer {
+  padding: 16px 24px 0;
+  border-top: 1px solid rgba(184,159,206,0.15);
+  font-size: 11px;
+  color: rgba(184,159,206,0.5);
+  letter-spacing: 0.03em;
+}
+
+/* ─── Main content ──────────────────────────────────────────────── */
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 36px max(24px, env(safe-area-inset-right, 0px)) 48px max(24px, env(safe-area-inset-left, 0px));
+  max-width: 820px;
+}
+
+.view { display: none; }
+.view.active { display: block; }
+
+/* ─── Page header ───────────────────────────────────────────────── */
+.page-header { margin-bottom: 28px; }
+.page-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.15;
+  text-wrap: balance;
+  letter-spacing: -0.01em;
+}
+.page-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  font-weight: 300;
+}
+
+/* ─── Status bar ────────────────────────────────────────────────── */
+.status-bar {
+  font-size: 12px;
+  color: var(--text-muted);
+  min-height: 18px;
+  margin-bottom: 8px;
+}
+
+/* ─── Cards ─────────────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-card);
+}
+.card-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  letter-spacing: 0.01em;
+}
+
+/* ─── Form elements ─────────────────────────────────────────────── */
+label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+input, select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 13px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  margin-bottom: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(123,94,167,0.12);
+}
+/* Custom select arrow */
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237B5EA7' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+/* ─── Grid helpers ──────────────────────────────────────────────── */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+/* ─── Buttons ───────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+}
+.btn:hover { background: var(--bg-muted); border-color: var(--lavender); }
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+}
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-ghost {
+  border-color: transparent;
+  color: var(--text-muted);
+  padding: 7px 12px;
+  font-size: 12px;
+}
+.btn-ghost:hover { background: var(--bg-muted); color: var(--text-secondary); border-color: transparent; }
+.btn-danger { color: #B03060; border-color: #E8C4CC; }
+.btn-danger:hover { background: #FFF0F3; }
+.btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+
+/* ─── Tags / badges ─────────────────────────────────────────────── */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
+  color: var(--text-muted);
+}
+.tag-kii  { background: #EDE8F7; color: #5B3E96; border-color: #C4AEDE; }
+.tag-fgd  { background: #E4F2EC; color: #2E7A55; border-color: #9DCEB5; }
+.tag-both { background: #EDE8F7; color: #5B3E96; border-color: #C4AEDE; }
+
+/* ─── Project list ──────────────────────────────────────────────── */
+.proj-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+.proj-item:last-child { border-bottom: none; }
+.proj-name {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  letter-spacing: 0.01em;
+}
+.proj-name:hover { color: var(--accent); }
+.proj-meta { font-size: 12px; color: var(--text-muted); margin-top: 3px; font-weight: 300; }
+
+/* ─── Metric tiles ──────────────────────────────────────────────── */
+.metric {
+  background: var(--bg-metric);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  text-align: center;
+}
+.metric-val {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.metric-lbl {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+/* ─── Gantt ─────────────────────────────────────────────────────── */
+.gantt-wrap { overflow-x: auto; margin-top: 8px; }
+.phase-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 7px;
+  gap: 10px;
+  min-width: 520px;
+}
+.phase-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  width: 178px;
+  flex-shrink: 0;
+  text-align: right;
+  padding-right: 6px;
+  font-weight: 400;
+}
+.phase-bar-wrap {
+  flex: 1;
+  background: var(--bg-muted);
+  border-radius: 4px;
+  height: 24px;
+  position: relative;
+}
+.phase-bar {
+  height: 100%;
+  border-radius: 4px;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  overflow: hidden;
+}
+.phase-bar span {
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.phase-day { font-size: 11px; color: var(--text-muted); white-space: nowrap; width: 82px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.axis-row { display: flex; align-items: center; gap: 10px; min-width: 520px; margin-bottom: 6px; }
+.axis-lbl { width: 178px; flex-shrink: 0; }
+.axis-track { flex: 1; position: relative; height: 16px; }
+.axis-tick { position: absolute; font-size: 10px; color: var(--text-muted); transform: translateX(-50%); letter-spacing: 0.01em; }
+
+/* ─── Phase table ───────────────────────────────────────────────── */
+.phase-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 4px; }
+.phase-table th {
+  text-align: left;
+  padding: 8px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.phase-table th:not(:first-child) { text-align: right; }
+.phase-table td { padding: 10px 6px; border-bottom: 1px solid var(--border); color: var(--text-primary); }
+.phase-table td:not(:first-child) { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.phase-table tr:last-child td { border-bottom: none; }
+.phase-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* ─── Divider label ─────────────────────────────────────────────── */
+.section-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  margin: 24px 0 12px;
+}
+.section-label:first-child { margin-top: 0; }
+
+/* ─── Empty state ───────────────────────────────────────────────── */
+.empty-state {
+  padding: 40px 0 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.empty-state-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+.empty-state p { font-size: 13px; font-weight: 300; }
+
+/* ─── Export overlay ────────────────────────────────────────────── */
+.overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(45,27,61,0.6);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.overlay-box {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  max-width: 560px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 28px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(45,27,61,0.3);
+}
+.overlay-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  line-height: 1;
+}
+.overlay-close:hover { background: var(--bg-muted); }
+.overlay-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+.overlay-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  font-weight: 300;
+  line-height: 1.5;
+}
+.overlay-img { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-md); }
+
+/* ─── Responsive ────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .shell { flex-direction: column; }
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 16px;
+    gap: 8px;
+  }
+  .sidebar-brand { padding: 0; border: none; }
+  .sidebar-brand-tagline { display: none; }
+  .sidebar-nav { flex-direction: row; padding: 0; gap: 4px; }
+  .nav-item { padding: 7px 10px; font-size: 12px; }
+  .sidebar-footer { display: none; }
+  .main { padding: 20px 16px 36px; }
+  .grid2 { grid-template-columns: 1fr; }
+  .grid3 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 400px) {
+  .grid3 { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="shell">
+  <!-- ── Sidebar ─────────────────────────────────────────── -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-name">QualiTime</div>
+      <div class="sidebar-brand-tagline">Timeline Planner</div>
+    </div>
+    <div class="sidebar-nav">
+      <button class="nav-item active" id="nav-projects" onclick="showTab('projects')">
+        <span class="nav-dot"></span>Projects
+      </button>
+      <button class="nav-item" id="nav-new" onclick="showTab('new')">
+        <span class="nav-dot"></span>New project
+      </button>
+      <button class="nav-item" id="nav-detail" style="display:none" onclick="showTab('detail')">
+        <span class="nav-dot"></span>Timeline
+      </button>
+    </div>
+    <div class="sidebar-footer">© 2026 Demetria Hubbard, DrPH</div>
+  </nav>
+
+  <!-- ── Main ───────────────────────────────────────────── -->
+  <main class="main">
+    <div id="status" class="status-bar"></div>
+
+    <!-- Projects view -->
+    <div id="view-projects" class="view active">
+      <div class="page-header">
+        <div class="page-title">Projects</div>
+        <div class="page-subtitle">Your saved qualitative analysis timelines</div>
+      </div>
+      <div class="card">
+        <div id="proj-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">◈</div>
+            <p>No projects yet — create one to get started.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- New project view -->
+    <div id="view-new" class="view">
+      <div class="page-header">
+        <div class="page-title">New project</div>
+        <div class="page-subtitle">Configure your study parameters</div>
+      </div>
+
+      <!-- Project details -->
+      <div class="card">
+        <div class="card-title">Project details</div>
+        <label>Project name</label>
+        <input id="f-name" type="text" placeholder="e.g. MNCH qualitative study">
+        <div class="grid2">
+          <div>
+            <label>Start date</label>
+            <input id="f-start" type="date">
+          </div>
+          <div>
+            <label>Data source</label>
+            <select id="f-source" onchange="onSourceChange()">
+              <option value="KII">Key Informant Interviews (KII) only</option>
+              <option value="FGD">Focus Groups (FG) only</option>
+              <option value="Both">Both (KII + FG)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- KII parameters -->
+      <div class="card" id="kii-card">
+        <div class="card-title">Key Informant Interview (KII) parameters</div>
+        <div class="grid2">
+          <div>
+            <label>Number of KIIs</label>
+            <input id="k-n" type="number" min="1" value="20">
+          </div>
+          <div>
+            <label>Avg. transcript pages</label>
+            <input id="k-pages" type="number" min="1" value="12">
+          </div>
+        </div>
+        <div class="grid2">
+          <div>
+            <label>Coding complexity</label>
+            <select id="k-complex">
+              <option value="low">Low — 1–2 themes</option>
+              <option value="medium" selected>Medium — 3–5 themes</option>
+              <option value="high">High — 6+ themes</option>
+            </select>
+          </div>
+          <div>
+            <label>Consensus requirement</label>
+            <select id="k-consensus">
+              <option value="light">Light — informal review</option>
+              <option value="moderate" selected>Moderate — structured</option>
+              <option value="intensive">Intensive — full team</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid2">
+          <div>
+            <label>Number of coders</label>
+            <input id="k-coders" type="number" min="1" value="2">
+          </div>
+          <div>
+            <label>IRR required?</label>
+            <select id="k-irr-req" onchange="toggleIRR('k')">
+              <option value="yes">Yes — rigorous</option>
+              <option value="no">No — loose evaluation</option>
+            </select>
+          </div>
+        </div>
+        <div id="k-irr-block" class="grid2">
+          <div>
+            <label>IRR target (κ)</label>
+            <select id="k-irr">
+              <option value="0.60">≥ 0.60 acceptable</option>
+              <option value="0.70">≥ 0.70 good</option>
+              <option value="0.80" selected>≥ 0.80 strong</option>
+            </select>
+          </div>
+          <div></div>
+        </div>
+        <div class="grid2">
+          <div>
+            <label>Member checking</label>
+            <select id="k-member">
+              <option value="no">No</option>
+              <option value="yes" selected>Yes</option>
+            </select>
+          </div>
+          <div>
+            <label>Triangulation</label>
+            <select id="k-tri">
+              <option value="no">No</option>
+              <option value="yes" selected>Yes</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- FGD parameters -->
+      <div class="card" id="fgd-card" style="display:none">
+        <div class="card-title">Focus Group (FG) parameters</div>
+        <div class="grid2">
+          <div>
+            <label>Number of focus groups</label>
+            <input id="g-n" type="number" min="1" value="8">
+          </div>
+          <div>
+            <label>Avg. transcript pages</label>
+            <input id="g-pages" type="number" min="1" value="18">
+          </div>
+        </div>
+        <div class="grid2">
+          <div>
+            <label>Coding complexity</label>
+            <select id="g-complex">
+              <option value="low">Low — 1–2 themes</option>
+              <option value="medium" selected>Medium — 3–5 themes</option>
+              <option value="high">High — 6+ themes</option>
+            </select>
+          </div>
+          <div>
+            <label>Consensus requirement</label>
+            <select id="g-consensus">
+              <option value="light">Light — informal review</option>
+              <option value="moderate" selected>Moderate — structured</option>
+              <option value="intensive">Intensive — full team</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid2">
+          <div>
+            <label>Number of coders</label>
+            <input id="g-coders" type="number" min="1" value="2">
+          </div>
+          <div>
+            <label>IRR required?</label>
+            <select id="g-irr-req" onchange="toggleIRR('g')">
+              <option value="yes">Yes — rigorous</option>
+              <option value="no">No — loose evaluation</option>
+            </select>
+          </div>
+        </div>
+        <div id="g-irr-block" class="grid2">
+          <div>
+            <label>IRR target (κ)</label>
+            <select id="g-irr">
+              <option value="0.60">≥ 0.60 acceptable</option>
+              <option value="0.70">≥ 0.70 good</option>
+              <option value="0.80" selected>≥ 0.80 strong</option>
+            </select>
+          </div>
+          <div></div>
+        </div>
+        <div class="grid2">
+          <div>
+            <label>Member checking</label>
+            <select id="g-member">
+              <option value="no">No</option>
+              <option value="yes" selected>Yes</option>
+            </select>
+          </div>
+          <div>
+            <label>Triangulation</label>
+            <select id="g-tri">
+              <option value="no">No</option>
+              <option value="yes" selected>Yes</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report writing -->
+      <div class="card" id="report-card">
+        <div class="card-title">Report writing</div>
+        <div class="grid2">
+          <div>
+            <label>Include report phase?</label>
+            <select id="r-include" onchange="toggleReport()">
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+          <div></div>
+        </div>
+        <div id="r-block" style="display:none">
+          <div class="grid2">
+            <div>
+              <label>Initial draft length</label>
+              <select id="r-draft">
+                <option value="10">~10 days — focused report</option>
+                <option value="12" selected>~12 days — standard</option>
+                <option value="14">~14 days — comprehensive</option>
+              </select>
+            </div>
+            <div>
+              <label>Revision rounds</label>
+              <select id="r-revisions">
+                <option value="1">1 round (~10 days)</option>
+                <option value="2" selected>2 rounds (~17 days)</option>
+                <option value="3">3 rounds (~24 days)</option>
+                <option value="4">4+ rounds (~30 days)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveProject()">Calculate &amp; save</button>
+        <button class="btn btn-ghost" onclick="showTab('projects')">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Detail / Gantt view -->
+    <div id="view-detail" class="view">
+      <div id="detail-content"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+var projects = [];
+var PHASE_COLORS = ['#2D1B3D','#7B5EA7','#9E6B8A','#5B8FA8','#B89FCE','#3D7A6B','#8B5C8B','#7EAFC4'];
+
+// ── Multipliers ──────────────────────────────────────────────────
+var complexMult   = {low:.12, medium:.20, high:.32};
+var consensusMult = {light:.15, moderate:.28, intensive:.45};
+var irrMult       = {'0.60':.5,'0.70':.75,'0.80':1.0};
+
+// ── UI helpers ───────────────────────────────────────────────────
+function showTab(tab) {
+  ['projects','new','detail'].forEach(function(t) {
+    var view = document.getElementById('view-'+t);
+    var nav  = document.getElementById('nav-'+t);
+    if(view) { view.classList.toggle('active', t===tab); }
+    if(nav)  { nav.classList.toggle('active', t===tab); }
+  });
+  var navDetail = document.getElementById('nav-detail');
+  if(navDetail) navDetail.style.display = tab==='detail' ? '' : 'none';
+}
+
+function toggleIRR(p) {
+  document.getElementById(p+'-irr-block').style.display =
+    document.getElementById(p+'-irr-req').value==='yes' ? '' : 'none';
+}
+
+function toggleReport() {
+  document.getElementById('r-block').style.display =
+    document.getElementById('r-include').value==='yes' ? '' : 'none';
+}
+
+function onSourceChange() {
+  var src = document.getElementById('f-source').value;
+  document.getElementById('kii-card').style.display = src==='FGD'  ? 'none' : '';
+  document.getElementById('fgd-card').style.display = src==='KII'  ? 'none' : '';
+}
+
+function setStatus(msg, dur) {
+  document.getElementById('status').textContent = msg;
+  if(dur!==0) setTimeout(function(){ document.getElementById('status').textContent=''; }, dur||2500);
+}
+
+// ── Date helpers ─────────────────────────────────────────────────
+function workdaysToDate(startStr, workdays) {
+  var d = new Date(startStr);
+  var added = 0;
+  while(added < workdays) {
+    d.setDate(d.getDate()+1);
+    var dow = d.getDay();
+    if(dow!==0 && dow!==6) added++;
+  }
+  return d;
+}
+function fmtDate(d) {
+  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+}
+function fmtDateShort(d) {
+  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+}
+
+// ── Phase calculation ────────────────────────────────────────────
+function calcPhases(src, p) {
+  var label = src==='KII' ? 'KII' : 'FG';
+  var cm  = complexMult[p.complex];
+  var csm = consensusMult[p.consensus];
+  var im  = irrMult[p.irr] || 1;
+  var totalPages = p.n * p.pages;
+  var ic   = Math.ceil(totalPages * cm / p.coders);
+  var cb   = Math.ceil(2 + totalPages * cm * 0.06);
+  var cons = Math.max(2, Math.ceil(p.n * csm * 0.12));
+  var irr  = p.irrReq==='yes' ? Math.ceil(Math.ceil(totalPages*.08)*im/p.coders+1) : 0;
+  var mc   = p.member==='yes' ? Math.max(3, Math.ceil(p.n*.15)) : 0;
+  var tri  = p.tri==='yes'    ? Math.max(3, Math.ceil(totalPages*.02+2)) : 0;
+  var phases = [
+    {name:'Initial coding ('+label+')', days:ic},
+    {name:'Codebook development ('+label+')', days:cb},
+    {name:'Consensus meetings ('+label+')', days:cons},
+  ];
+  if(irr)  phases.push({name:'IRR ('+label+')', days:irr});
+  if(mc)   phases.push({name:'Member checking ('+label+')', days:mc});
+  if(tri)  phases.push({name:'Triangulation ('+label+')', days:tri});
+  phases.push({name:'Final review ('+label+')', days:2});
+  return phases;
+}
+
+function computeProject(proj) {
+  var raw = [];
+  if(proj.source==='KII')      raw = calcPhases('KII', proj.kii);
+  else if(proj.source==='FGD') raw = calcPhases('FGD', proj.fgd);
+  else                          raw = calcPhases('KII', proj.kii).concat(calcPhases('FGD', proj.fgd));
+  if(proj.report && proj.report.include==='yes') {
+    var revDays = [0,10,17,24,30][Math.min(proj.report.revisions,4)];
+    raw.push({name:'Report — initial draft', days:proj.report.draft});
+    if(revDays) raw.push({name:'Report — revisions ('+proj.report.revisions+' round'+(proj.report.revisions>1?'s':'')+')', days:revDays});
+  }
+  var day = 0;
+  return raw.map(function(p){
+    var s=day; day+=p.days;
+    return {name:p.name, days:p.days, start:s, end:day};
+  });
+}
+
+// ── Storage ──────────────────────────────────────────────────────
+function loadProjects() {
+  try {
+    window.storage.get('projects').then(function(r) {
+      if(r && r.value) { try { projects = JSON.parse(r.value); } catch(e){} }
+      renderProjList();
+    }).catch(function(){ renderProjList(); });
+  } catch(e) { renderProjList(); }
+}
+
+function persistProjects() {
+  try {
+    window.storage.set('projects', JSON.stringify(projects))
+      .then(function(){ setStatus('Saved.'); })
+      .catch(function(){ setStatus('Save failed.', 4000); });
+  } catch(e) {}
+}
+
+// ── Project list ─────────────────────────────────────────────────
+function renderProjList() {
+  var el = document.getElementById('proj-list');
+  if(!projects.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">◈</div><p>No projects yet — create one to get started.</p></div>';
+    return;
+  }
+  el.innerHTML = projects.map(function(p) {
+    var phases  = computeProject(p);
+    var total   = phases[phases.length-1].end;
+    var endDate = workdaysToDate(p.startDate, total);
+    var srcClass = p.source==='FGD' ? 'fgd' : p.source.toLowerCase();
+    return '<div class="proj-item">'
+      +'<div style="flex:1">'
+      +'<div class="proj-name" onclick="openProjectById(\''+p.id+'\')">' +p.name+'</div>'
+      +'<div class="proj-meta">'+fmtDate(new Date(p.startDate))+' → '+fmtDate(endDate)+' · '+total+' working days</div>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<span class="tag tag-'+srcClass+'">'+( p.source==='FGD' ? 'FG' : p.source )+'</span>'
+      +'<button class="btn btn-danger" style="font-size:11px;padding:5px 10px" onclick="deleteProject(\''+p.id+'\')">Delete</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function deleteProject(id) {
+  projects = projects.filter(function(p){ return p.id!==id; });
+  persistProjects();
+  renderProjList();
+}
+
+function openProjectById(id) {
+  var proj = projects.find(function(p){ return p.id===id; });
+  if(proj) openProject(proj);
+}
+
+// ── Save new project ─────────────────────────────────────────────
+function saveProject() {
+  var name     = document.getElementById('f-name').value.trim();
+  var startVal = document.getElementById('f-start').value;
+  var source   = document.getElementById('f-source').value;
+  if(!name)     { setStatus('Please enter a project name.', 3500); return; }
+  if(!startVal) { setStatus('Please select a start date.', 3500); return; }
+
+  function kiiP() {
+    return { n:+document.getElementById('k-n').value||20, pages:+document.getElementById('k-pages').value||12,
+      complex:document.getElementById('k-complex').value, consensus:document.getElementById('k-consensus').value,
+      coders:+document.getElementById('k-coders').value||2, irrReq:document.getElementById('k-irr-req').value,
+      irr:document.getElementById('k-irr').value, member:document.getElementById('k-member').value,
+      tri:document.getElementById('k-tri').value };
+  }
+  function fgdP() {
+    return { n:+document.getElementById('g-n').value||8, pages:+document.getElementById('g-pages').value||18,
+      complex:document.getElementById('g-complex').value, consensus:document.getElementById('g-consensus').value,
+      coders:+document.getElementById('g-coders').value||2, irrReq:document.getElementById('g-irr-req').value,
+      irr:document.getElementById('g-irr').value, member:document.getElementById('g-member').value,
+      tri:document.getElementById('g-tri').value };
+  }
+
+  var proj = {
+    id: Date.now().toString(), name, startDate: startVal, source,
+    kii:    source!=='FGD' ? kiiP() : null,
+    fgd:    source!=='KII' ? fgdP() : null,
+    report: {
+      include:   document.getElementById('r-include').value,
+      draft:    +document.getElementById('r-draft').value,
+      revisions:+document.getElementById('r-revisions').value,
+    },
+  };
+  projects.unshift(proj);
+  persistProjects();
+  renderProjList();
+  openProject(proj);
+}
+
+// ── Detail / Gantt ────────────────────────────────────────────────
+function openProject(proj) {
+  renderDetail(proj);
+  document.getElementById('nav-detail').style.display = '';
+  showTab('detail');
+}
+
+function renderDetail(proj) {
+  var phases    = computeProject(proj);
+  var total     = phases[phases.length-1].end;
+  var startDate = new Date(proj.startDate);
+  var endDate   = workdaysToDate(proj.startDate, total);
+  var totalPages = (proj.kii ? proj.kii.n*proj.kii.pages : 0) + (proj.fgd ? proj.fgd.n*proj.fgd.pages : 0);
+
+  // Gantt bars
+  var barsHTML = phases.map(function(p,i){
+    var left  = (p.start/total*100).toFixed(1);
+    var width = Math.max(1.5, (p.days/total*100)).toFixed(1);
+    var color = PHASE_COLORS[i % PHASE_COLORS.length];
+    var sd = workdaysToDate(proj.startDate, p.start);
+    return '<div class="phase-row">'
+      +'<div class="phase-label">'+p.name+'</div>'
+      +'<div class="phase-bar-wrap">'
+      +'<div class="phase-bar" style="left:'+left+'%;width:'+width+'%;background:'+color+'28;border-left:3px solid '+color+'">'
+      +'<span style="color:'+color+'">'+p.days+'d</span>'
+      +'</div></div>'
+      +'<div class="phase-day">'+fmtDateShort(sd)+'</div>'
+      +'</div>';
+  }).join('');
+
+  // Axis
+  var ticks = [0,25,50,75,100].map(function(pct){
+    var d = workdaysToDate(proj.startDate, Math.round(pct/100*total));
+    return '<span class="axis-tick" style="left:'+pct+'%">'+fmtDateShort(d)+'</span>';
+  }).join('');
+
+  // Table rows
+  var tableRows = phases.map(function(p,i){
+    var sd = workdaysToDate(proj.startDate, p.start);
+    var ed = workdaysToDate(proj.startDate, p.end);
+    var color = PHASE_COLORS[i % PHASE_COLORS.length];
+    return '<tr>'
+      +'<td><span class="phase-dot" style="background:'+color+'"></span>'+p.name+'</td>'
+      +'<td>'+p.days+'</td>'
+      +'<td>'+fmtDate(sd)+'</td>'
+      +'<td>'+fmtDate(ed)+'</td>'
+      +'</tr>';
+  }).join('');
+
+  var srcClass = proj.source==='FGD' ? 'fgd' : proj.source.toLowerCase();
+
+  document.getElementById('detail-content').innerHTML =
+
+    // Header
+    '<div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">'
+    +'<div>'
+    +'<div class="page-title">'+proj.name+'</div>'
+    +'<div style="margin-top:6px;display:flex;align-items:center;gap:8px">'
+    +'<span class="tag tag-'+srcClass+'">'+( proj.source==='FGD' ? 'FG' : proj.source )+'</span>'
+    +'<span class="page-subtitle" style="margin:0">'+fmtDate(startDate)+' → '+fmtDate(endDate)+'</span>'
+    +'</div></div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    +'<button class="btn btn-ghost" onclick="showTab(\'projects\')">← All projects</button>'
+    +'<button class="btn" onclick="exportPNG()" style="font-size:12px">⬇ PNG</button>'
+    +'<button class="btn" onclick="exportPDF()" style="font-size:12px">⬇ PDF</button>'
+    +'</div></div>'
+
+    // Metrics
+    +'<div class="grid3" style="margin-bottom:16px">'
+    +'<div class="metric"><div class="metric-val">'+total+'</div><div class="metric-lbl">Working days</div></div>'
+    +'<div class="metric"><div class="metric-val">'+fmtDateShort(startDate)+'</div><div class="metric-lbl">Start</div></div>'
+    +'<div class="metric"><div class="metric-val">'+fmtDateShort(endDate)+'</div><div class="metric-lbl">Completion</div></div>'
+    +'</div>'
+    +(totalPages ? '<div class="grid2" style="margin-bottom:16px">'
+    +'<div class="metric"><div class="metric-val">'+totalPages+'</div><div class="metric-lbl">Total transcript pages</div></div>'
+    +'<div class="metric"><div class="metric-val">'+phases.length+'</div><div class="metric-lbl">Analysis phases</div></div>'
+    +'</div>' : '')
+
+    // Gantt
+    +'<div class="card">'
+    +'<div class="card-title">Gantt chart</div>'
+    +'<div class="gantt-wrap">'
+    +'<div class="axis-row"><div class="axis-lbl"></div><div class="axis-track">'+ticks+'</div><div style="width:82px"></div></div>'
+    +barsHTML
+    +'</div></div>'
+
+    // Phase table
+    +'<div class="card">'
+    +'<div class="card-title">Phase breakdown</div>'
+    +'<div style="overflow-x:auto"><table class="phase-table">'
+    +'<thead><tr><th>Phase</th><th style="text-align:right">Days</th><th style="text-align:right">Start</th><th style="text-align:right">End</th></tr></thead>'
+    +'<tbody>'+tableRows+'</tbody>'
+    +'</table></div></div>';
+}
+
+// ── Export ───────────────────────────────────────────────────────
+function closeOverlay() {
+  var ov = document.getElementById('export-overlay');
+  if(ov) ov.remove();
+}
+
+function showOverlay(html) {
+  closeOverlay();
+  var ov = document.createElement('div');
+  ov.id = 'export-overlay';
+  ov.className = 'overlay-backdrop';
+  ov.innerHTML = '<div class="overlay-box">'+html+'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) closeOverlay(); });
+}
+
+function exportPNG() {
+  var el = document.getElementById('detail-content');
+  if(!el) return;
+  setStatus('Generating PNG…', 0);
+  html2canvas(el, {backgroundColor:'#FAF7FC', scale:2, useCORS:true, logging:false}).then(function(canvas){
+    setStatus('');
+    showOverlay(
+      '<button class="overlay-close" onclick="closeOverlay()">×</button>'
+      +'<div class="overlay-title">Save as PNG</div>'
+      +'<p class="overlay-hint">Right-click the image and choose <strong>Save image as…</strong> to download.</p>'
+      +'<img class="overlay-img" src="'+canvas.toDataURL('image/png')+'">'
+    );
+  }).catch(function(e){ setStatus('PNG failed: '+e.message, 4000); });
+}
+
+function exportPDF() {
+  var el = document.getElementById('detail-content');
+  if(!el) return;
+  showOverlay(
+    '<button class="overlay-close" onclick="closeOverlay()">×</button>'
+    +'<div class="overlay-title">Save as PDF</div>'
+    +'<p class="overlay-hint">Press <strong>Ctrl+P</strong> (Windows) or <strong>Cmd+P</strong> (Mac), then set the destination to <strong>Save as PDF</strong>. The overlay will not appear in print.</p>'
+    +'<div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;font-size:13px;color:var(--text-secondary)">'
+    +el.innerHTML
+    +'</div>'
+  );
+}
+
+// ── Init ─────────────────────────────────────────────────────────
+loadProjects();
+</script>
+
+</body></html>
